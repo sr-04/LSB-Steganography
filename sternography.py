@@ -1,64 +1,68 @@
-#!/usr/bin/python3
+import cv2
+import string
+import os
+d={}
+c={}
 
-from stegano import lsb
-import argparse
-import sys
-import random
-import re
+for i in range(255):
+    d[chr(i)]=i
+    c[i]=chr(i)
+  
+  
+#print(c)
 
-parser = argparse.ArgumentParser(description="Image Steganography\n[+] Use .png files only")
-parser.add_argument('-e',type=str,help="To embed a message in the image")
-parser.add_argument('-f',help="To pass .png (Image) file")
-parser.add_argument('-x',help="To extract the message from the image.",action="store_true")
-parser.add_argument('-p',help="To put in a password.", nargs="?", const="no_password_given")
-args = parser.parse_args()
+x=cv2.imread("1.jpg")
 
-#./stego -f <filename.png> -e "secret_message" -p <Password (Optional)>" -> To embed a secret message.
-#./stego -f <secretfile.png> -x -p <Password supplied> -> To extract the secret message.
-#Note : Even if you passed a blank field in the -p argument,while creating a secret file, you must append a -p while extracting the message. 
-try:
-	if not args.f:
-		print("Please enter a file name.")
-		print("[*] Type -h for help.")
-		sys.exit(1)
-	
-	else:
-		if args.f and args.e:
-			if (".png" in args.f):
-				if not args.p:
-					args.p = "no_password_given"
-				embed = args.p +" "+ args.e
-				secret = lsb.hide(args.f,embed)
-				random = random.randint(0,100)
-				filename = "secret"+str(random)+".png"
-				secret.save(filename)
-				print("File Saved as ",filename)
-			else:
-				print("[-]Enter a .png file")
-				sys.exit(1)
+i=x.shape[0]
+j=x.shape[1]
+print(i,j)
 
-		elif args.f and args.x:
-			if not args.p:
-				print("[-]Enter a password")
-				print("[*] If you don't want to supply the password just type apped -p at the end of the query")
-				sys.exit(1)
-			else:
-				message = lsb.reveal(args.f)
-				if (len(re.findall('\\b'+args.p+'\\b',message)) != 0):
-					message = message.replace(args.p,"")
-					print("The secret Message is ",message) 
+key=input("Enter key to edit(Security Key) : ")
+text=input("Enter text to hide : ")
 
-				else:
-					print("Couldn't reveal the Message with the Passcode.")
-						
-		else:
-			print("[-]Error Occured","\n[*]Try Again with the correct syntax.")
-			print("[*]If you are trying to embed a message, try -e flag.")
-			print("[*]If you are trying to extract a message then try -x flag")
-			sys.exit(1)
+kl=0
+tln=len(text)
+z=0 #decides plane
+n=0 #number of row
+m=0 #number of column
 
-except FileNotFoundError:
-	print("[-]File not Found.")
-	
-except KeyboardInterrupt:
-	print("[-]Keyboard Interrupt.")
+l=len(text)
+
+for i in range(l):
+    x[n,m,z]=d[text[i]]^d[key[kl]]
+    n=n+1
+    m=m+1
+    m=(m+1)%3 #this is for every value of z , remainder will be between 0,1,2 . i.e G,R,B plane will be set automatically.
+                #whatever be the value of z , z=(z+1)%3 will always between 0,1,2 . The same concept is used for random number in dice and card games.
+    kl=(kl+1)%len(key)
+    
+cv2.imwrite("encrypted_img.jpg",x) 
+os.startfile("encrypted_img.jpg")
+print("Data Hiding in Image completed successfully.")
+#x=cv2.imread(“encrypted_img.jpg")
+    
+
+kl=0
+tln=len(text)
+z=0 #decides plane
+n=0 #number of row
+m=0 #number of column
+
+ch = int(input("\nEnter 1 to extract data from Image : "))
+
+if ch == 1:
+    key1=input("\n\nRe enter key to extract text : ")
+    decrypt=""
+
+    if key == key1 :
+        for i in range(l):
+            decrypt+=c[x[n,m,z]^d[key[kl]]]
+            n=n+1
+            m=m+1
+            m=(m+1)%3
+            kl=(kl+1)%len(key)
+        print("Encrypted text was : ",decrypt)
+    else:
+        print("Key doesn't matched.")
+else:
+    print("Thank you. EXITING.")
